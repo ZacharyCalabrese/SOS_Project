@@ -26,19 +26,31 @@ public class os {
 		FST = new TreeMap();
 		FST.put(99, 0);
 		
-		sos.ontrace();
+		sos.offtrace();
 	}
-	
+
+	/**
+	  *	This function is called when a new job enters the system.
+	  * Check to see if there are jobs in the system, if there is,
+	  * save the current status of the last running program.  Then
+	  * put the new job into the job table and see if there is room in memory
+	  */
 	public static void Crint(int a[], int p[]){
 		currentTime = p[5];
 		setCurrentJob(p);
 		
+		/*
+		 * If not the first job into the system, the previously running job
+		 * should be placed back on the ready queue
+		 */
 		if(lastJobProcessed != 0){
 			// Update job table of last job
 			if(jobTable.containsKey(lastJobProcessed))
 				if(lastJob.inCore)
-					if(!lastJob.Blocked)
+					if(!lastJob.Blocked){
+						System.out.println("here");
 						readyQueue.add(lastJob);
+					}
 		}
 		
 		jobsInJobTable++;
@@ -49,8 +61,14 @@ public class os {
 		if(jobsInJobTable < 50){
 			JobLink nextJob = new JobLink(p[1], p[2], p[3], p[4], p[5], false, false);
 			jobTable.put(nextJob.JobNumber, nextJob);
+
+			/*
+			 * Place job in memory
+             */
 			MemoryManager(a, p, 0);
 		}
+
+		printJobTable();
 	}
 	
 	public static void Svc(int a[],int[]p){
@@ -94,6 +112,7 @@ public class os {
 	public static void Drmint(int a[], int p[]){
 		setCurrentJob(p);
 		currentTime = p[5];
+		currentJob.inCore = true;
 		
 		readyQueue.add(currentJob);
 		CPUScheduler(a,p);
@@ -104,6 +123,9 @@ public class os {
 		
 		setCurrentJob(p);		
 		//TimeManager(a, p);
+		if(!currentJob.inCore){
+			currentJob = lastJob;
+		}
 		
 		currentJob.Blocked = false;
 		currentJob.ioCompleted++;
@@ -166,11 +188,20 @@ public class os {
 	public static void Swapper(int a[], int p[], int function){
 		// Function( 0 = place in main memory, 1 = do I/O )
 		if(function == 0){
-			a[0] = 1;
-			currentJob.inCore = true;
+			//a[0] = 1;
 			currentJob.address = currentBaseAddress;
 			
 			sos.siodrum(currentJob.JobNumber, currentJob.JobSize, currentBaseAddress, 0);
+			if(lastJobProcessed != 0){
+				// Update job table of last job
+				if(jobTable.containsKey(lastJobProcessed))
+					if(lastJob.inCore)
+						if(!lastJob.Blocked){
+							System.out.println("here");
+							readyQueue.add(lastJob);
+							CPUScheduler(a,p);
+						}
+			}
 		}else if(function == 1){
 			currentJob.doingIO = true;
 			currentJob.ioLeft++;
@@ -206,11 +237,10 @@ public class os {
 				FST.remove(FST.lastKey());
 				FST.put(currentSize - currentJob.JobSize, currentBaseAddress + currentJob.JobSize);
 				Swapper(a, p, 0);
-				//CPUScheduler(a,p);
+				CPUScheduler(a,p);
 			}else{
 				currentJob = lastJob;
 				lastJobProcessed = currentJob.JobNumber;
-				a[0] = 1;
 			}
 		}else if(function == 1){
 			FST.put(currentJob.JobSize, currentJob.address);
@@ -223,6 +253,7 @@ public class os {
 			CPUScheduler(a,p);
 		}
 		
+		CPUScheduler(a,p);
 
 	}	
 	
@@ -243,4 +274,26 @@ public class os {
 	             System.out.println(me.getValue());
 	         }
      }
+
+	public static void printJobTable(){
+			 JobLink temp;
+	         // Get a set of the entries
+	         Set set = jobTable.entrySet();
+	         // Get an iterator
+	         Iterator i = set.iterator();
+	         // Display elements
+	 
+	         System.out.println();
+	         System.out.println("FREE SPACE TABLE");
+	         System.out.println("Size  || Address");
+	 
+	         while(i.hasNext()) {
+	        	 Map.Entry me = (Map.Entry)i.next();
+	             System.out.print(me.getKey() + "              ");
+				 temp = (JobLink) me.getValue();
+				 temp.JobPrintStatus();
+	         }
+
+
+    }
 }
