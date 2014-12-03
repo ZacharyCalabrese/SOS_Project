@@ -1,5 +1,3 @@
-// Just a test
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +11,9 @@ public class os{
     private static processControlBlock currentWorkingJobPCB;
     private static int roundRobinSlice;
     
+    /*
+        INITIALIZE VARIABLES, TABLES, AND ROUND ROBIN SLICE
+    */
     public static void startup(){
         JobTable = new jobTable(50);
         FreeSpaceTable = new freeSpaceTable(99);
@@ -25,6 +26,21 @@ public class os{
         sos.ontrace();
     }
     
+    /*
+        Crint is called when a new job enters the system.
+        
+        Crint checks to see if a job was interrupted, if it
+        was, calculate how much time was processed and place that
+        job back on the ready queue.
+        
+        Then check to see if the job entering the system is already in our 
+        job table.  That would mean that we moved it out of memory to make 
+        space for something else, and we should move it back in.
+        
+        If that condition is false, create a PCB for the job entering
+        the system, add the job to our job table, and try
+        to find space in memory for our job
+    */
     public static void Crint(int a[], int p[]){
         if(lastRunningJobPCB != null){
             lastRunningJobPCB.calculateTimeProcessed(p[5]);
@@ -35,46 +51,52 @@ public class os{
         if(JobTable.contains(p[1])){
             // PLACE JOB BACK INTO CORE THAT WE ALREADY HAVE DONE MATH FOR
         }else{
-            System.out.println("Here");
             currentWorkingJobPCB = new processControlBlock(p[1], p[2], p[3], p[4], p[5]);
             JobTable.addJob(currentWorkingJobPCB);
             MemoryManager(currentWorkingJobPCB, 0);
-            // PLACE NEW JOB INTO MEMORY
         }
         
-                cpuScheduler(a, p);
-        
-                    JobTable.printJobTable();
+        // Only one chance a job goes on the ready queue from this function
+        cpuScheduler(a, p);
     }
     
+    /*
+        Svc is called when a job currently on the system wants some
+        sort of service.  The three possibilities are service to 
+        terminate (a[0] == 5), service to do I/O (a[0] == 6), and service to be blocked(a[0] == 7).
+        
+        At the start of this function we should calculate the time processed since we are being interrupted.
+        The lastJob should be the same as the current job
+    */
     public static void Svc(int a[], int p[]){
         lastRunningJobPCB.calculateTimeProcessed(p[5]);
         
-        currentWorkingJobPCB = lastRunningJobPCB;
-        
         if(a[0] == 5){
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);        
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-                        readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);        
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);             
-            currentWorkingJobPCB.removeInCore();
-            FreeSpaceTable.addSpace(currentWorkingJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);   
+                                 
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);                                                                    
+            lastRunningJobPCB.removeInCore();
+            FreeSpaceTable.addSpace(lastRunningJobPCB);
             JobTable.removeJob(lastRunningJobPCB);
             currentWorkingJobPCB = null;
             lastRunningJobPCB = null;
         }else if(a[0] == 6){
-            System.out.println(currentWorkingJobPCB.getJobNumber());
-            currentWorkingJobPCB.incrementIoCount();
+            System.out.println(lastRunningJobPCB.getJobNumber());
+            lastRunningJobPCB.incrementIoCount();
                         System.out.println("Break2");
             ioQueue.add(currentWorkingJobPCB);
                         System.out.println("Break3");
@@ -82,21 +104,14 @@ public class os{
                         System.out.println("Break4");
         }else if(a[0] == 7){
         System.out.println("breakhere");
-            if(currentWorkingJobPCB.getIoCount() != 0){
-            lastRunningJobPCB = null;
+            if(lastRunningJobPCB.getIoCount() != 0){
             
-                currentWorkingJobPCB.blockJob();
-                            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);        
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-                        readyQueue.remove(currentWorkingJobPCB);        
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
+            lastRunningJobPCB.blockJob();
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            lastRunningJobPCB = null;            
             
             }else{
                 readyQueue.add(currentWorkingJobPCB);
@@ -109,23 +124,31 @@ public class os{
     }
     
     public static void Tro(int a[], int p[]){
-    
         lastRunningJobPCB.calculateTimeProcessed(p[5]);
         JobTable.printJobTable();
             System.out.println("Job to run: " + lastRunningJobPCB.getJobNumber());        
-        currentWorkingJobPCB = lastRunningJobPCB;
-                    readyQueue.remove(currentWorkingJobPCB);
+                    //readyQueue.remove(currentWorkingJobPCB);
         if(currentWorkingJobPCB.getCpuTimeUsed() >= currentWorkingJobPCB.getMaxCpuTime()){
             System.out.println("here1");
-            readyQueue.remove(currentWorkingJobPCB);        
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            readyQueue.remove(currentWorkingJobPCB);
-            currentWorkingJobPCB.removeInCore();
-            FreeSpaceTable.addSpace(currentWorkingJobPCB);
-            JobTable.removeJob(currentWorkingJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);
+            readyQueue.remove(lastRunningJobPCB);                        
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);
+            ioQueue.remove(lastRunningJobPCB);
+            lastRunningJobPCB.removeInCore();
+            FreeSpaceTable.addSpace(lastRunningJobPCB);
+            JobTable.removeJob(lastRunningJobPCB);
             currentWorkingJobPCB = null;
             lastRunningJobPCB = null;
         }else{
@@ -201,10 +224,10 @@ public class os{
         currentWorkingJobPCB = ioQueue.get(0);
         currentWorkingJobPCB.latchJob();
         if(ioQueue.size() == 1){
-            sos.siodisk(currentWorkingJobPCB.getJobNumber());   
+            sos.siodisk(currentWorkingJobPCB.getJobNumber());  
+            readyQueue.add(currentWorkingJobPCB); 
         }
-        readyQueue.add(currentWorkingJobPCB);
-        
+    
     }
     
     public static void cpuScheduler(int a[], int p[]){
