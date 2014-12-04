@@ -14,7 +14,7 @@ public class freeSpaceTable{
         for(int i = 0; i < SIZE_OF_MEMORY; i++)
             FreeSpaceTable[i] = 0;
             
-        worstSpaceSize = 99;
+        worstSpaceSize = SIZE_OF_MEMORY;
         worstSpaceAddress = 0;
     }
     
@@ -25,17 +25,19 @@ public class freeSpaceTable{
                 FreeSpaceTable[i] = 1;
             
             tempAddress = worstSpaceAddress;
-            calculateWorstSpaceAddressAndSize();
-            
             job.setAddress(tempAddress);
+            
+            calculateWorstSpaceAddressAndSize();
+
             return tempAddress;
         }else{
+                    calculateWorstSpaceAddressAndSize();
             return -1;
         }
     }
     
     public void addSpace(processControlBlock job){
-        for(int i = job.getAddress(); i < job.getAddress() + job.getJobSize(); i++)
+        for(int i = job.getAddress(); i < job.getAddress() + job.getJobSize() ; i++)
             FreeSpaceTable[i] = 0;
             
         calculateWorstSpaceAddressAndSize();
@@ -61,9 +63,14 @@ public class freeSpaceTable{
             }            
         }
         
+        
+        
         if(largestSize == 0 && tempSize != 0){
             largestSize = tempSize;
             largestSizeAddress = tempAddress;
+        }else if(tempSize > largestSize){
+            largestSize = tempSize;
+            largestSizeAddress = tempAddress;        
         }
         
         worstSpaceAddress = largestSizeAddress;
@@ -85,7 +92,10 @@ public class freeSpaceTable{
     }
     
     public void printFST(){
-        for(int i = 0; i < SIZE_OF_MEMORY; i++)
-            System.out.println(i + " " + FreeSpaceTable[i]);
+        for(int i = 0; i < SIZE_OF_MEMORY; i++){
+            if(i%6 == 0)
+            System.out.println("");
+            System.out.print(i + " " + FreeSpaceTable[i] + "      ");
+        }
     }
 }

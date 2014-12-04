@@ -7,6 +7,7 @@ public class os{
     private static List<processControlBlock> readyQueue = new ArrayList<processControlBlock>();
     private static List<processControlBlock> drumQueue = new ArrayList<processControlBlock>();
     private static List<processControlBlock> ioQueue = new ArrayList<processControlBlock>();
+    private static List<processControlBlock> longTermScheduler = new ArrayList<processControlBlock>();
     private static processControlBlock lastRunningJobPCB;
     private static processControlBlock currentWorkingJobPCB;
     private static int roundRobinSlice;
@@ -16,7 +17,7 @@ public class os{
     */
     public static void startup(){
         JobTable = new jobTable(50);
-        FreeSpaceTable = new freeSpaceTable(99);
+        FreeSpaceTable = new freeSpaceTable(100);
         
         lastRunningJobPCB = null;
         currentWorkingJobPCB = null;
@@ -72,36 +73,24 @@ public class os{
         lastRunningJobPCB.calculateTimeProcessed(p[5]);
         
         if(a[0] == 5){
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);   
-                                 
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);                                                                    
+            while(readyQueue.contains(lastRunningJobPCB))
+                readyQueue.remove(lastRunningJobPCB);
+            while(ioQueue.contains(lastRunningJobPCB))
+                ioQueue.remove(lastRunningJobPCB);                                                    
+                                                                                                                                          
             lastRunningJobPCB.removeInCore();
             FreeSpaceTable.addSpace(lastRunningJobPCB);
             JobTable.removeJob(lastRunningJobPCB);
             currentWorkingJobPCB = null;
-            lastRunningJobPCB = null;
+            lastRunningJobPCB = null;            
         }else if(a[0] == 6){
             System.out.println(lastRunningJobPCB.getJobNumber());
             lastRunningJobPCB.incrementIoCount();
-                        System.out.println("Break2");
+            System.out.println("Break2");
             ioQueue.add(currentWorkingJobPCB);
-                        System.out.println("Break3");
+            System.out.println("Break3");
             ioManager();
-                        System.out.println("Break4");
+            System.out.println("Break4");
         }else if(a[0] == 7){
         System.out.println("breakhere");
             if(lastRunningJobPCB.getIoCount() != 0){
@@ -130,27 +119,17 @@ public class os{
                     //readyQueue.remove(currentWorkingJobPCB);
         if(currentWorkingJobPCB.getCpuTimeUsed() >= currentWorkingJobPCB.getMaxCpuTime()){
             System.out.println("here1");
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);                        
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);
-            ioQueue.remove(lastRunningJobPCB);
+            while(readyQueue.contains(lastRunningJobPCB))
+                readyQueue.remove(lastRunningJobPCB);
+            while(ioQueue.contains(lastRunningJobPCB))
+                ioQueue.remove(lastRunningJobPCB);                                                     
+
             lastRunningJobPCB.removeInCore();
             FreeSpaceTable.addSpace(lastRunningJobPCB);
             JobTable.removeJob(lastRunningJobPCB);
             currentWorkingJobPCB = null;
             lastRunningJobPCB = null;
+            MemoryManager(currentWorkingJobPCB, 1);
         }else{
                     System.out.println("here2");
             readyQueue.add(currentWorkingJobPCB);
@@ -187,7 +166,7 @@ public class os{
         if(!ioQueue.isEmpty()){
             currentWorkingJobPCB = ioQueue.get(0);
             sos.siodisk(currentWorkingJobPCB.getJobNumber());
-            //readyQueue.add(currentWorkingJobPCB);
+            readyQueue.add(currentWorkingJobPCB);
         }
         
         cpuScheduler(a, p);   
@@ -196,6 +175,7 @@ public class os{
     }
     
     public static void Drmint(int a[], int p[]){
+    
         if(lastRunningJobPCB != null){
             lastRunningJobPCB.calculateTimeProcessed(p[5]);
             readyQueue.add(lastRunningJobPCB);
@@ -225,26 +205,40 @@ public class os{
         currentWorkingJobPCB.latchJob();
         if(ioQueue.size() == 1){
             sos.siodisk(currentWorkingJobPCB.getJobNumber());  
-            readyQueue.add(currentWorkingJobPCB); 
         }
-    
+        System.out.println(currentWorkingJobPCB.getJobNumber());
+        readyQueue.add(currentWorkingJobPCB);
     }
     
     public static void cpuScheduler(int a[], int p[]){
-        if(!readyQueue.isEmpty()){
+        boolean possible = true;
+        boolean falseStuff = false;
+        if(readyQueue.isEmpty()){
+            possible = false;
+            falseStuff = true;
+        }
+    
+        while(possible){
             System.out.println(readyQueue.size());
             currentWorkingJobPCB = readyQueue.get(0);
+                        readyQueue.remove(0);
             if(currentWorkingJobPCB.getBlockedStatus() == false){
-            System.out.println("Job to run: " + currentWorkingJobPCB.getJobNumber());
-            readyQueue.remove(0);
-            dispatcher(a, p);
+                System.out.println("Job to rusadfsafn: " + currentWorkingJobPCB.getJobNumber());
+                dispatcher(a, p);
+                possible = false;
             }else{
-            System.out.println(currentWorkingJobPCB.getJobNumber());
-            a[0] = 1;
-            currentWorkingJobPCB = null;
-            lastRunningJobPCB = null;
+                if(readyQueue.isEmpty()){
+                    possible = false;
+                }
+                if(possible)
+                    readyQueue.remove(0);
+                System.out.println(currentWorkingJobPCB.getJobNumber());
+                a[0] = 1;
+                currentWorkingJobPCB = null;
+                lastRunningJobPCB = null;
             }
-        }else{
+        }
+        if(falseStuff == true){
             currentWorkingJobPCB = null;
             lastRunningJobPCB = null;
             a[0] = 1;
@@ -271,19 +265,54 @@ public class os{
         
     public static void MemoryManager(processControlBlock job, int function){
         int tempAddress;
+        boolean working = false;
+        
+        if(longTermScheduler.size() > 0)
+            working = true; 
+        
         if(function == 0){ // SEE IF THE JOB FITS IN FREE SPACE TALBLE, IF IT DOES, PLACE IN MEMORY
-            System.out.println("here1");
             FreeSpaceTable.printFST();
             tempAddress = FreeSpaceTable.findSpaceForJob(job);
             System.out.println(tempAddress);
             FreeSpaceTable.printFST();
+            
+            System.out.println(FreeSpaceTable.getWorstSpaceSize());
             if(tempAddress >= 0){
-                System.out.println("here2");
                 Swapper(job, 0);
+                
+                while(working){
+                    job = longTermScheduler.get(0);
+                    tempAddress = FreeSpaceTable.findSpaceForJob(job);
+                    System.out.println(tempAddress);
+                    FreeSpaceTable.printFST();
+                    if(tempAddress >= 0){
+                        Swapper(job, 0);
+                        longTermScheduler.remove(0);
+                    }else{
+                        working = false;
+                    }                    
+                }
+                
                 // PLACE IN MEMORY AT ADDRESS
             }else{
+                longTermScheduler.add(job);
                 // REMOVE A JOB FROM MEMORY and TRY TO FIND SPACE AGAIN
             }
+        }else if(function == 1){            
+                while(working){
+                    job = longTermScheduler.get(0);
+                    tempAddress = FreeSpaceTable.findSpaceForJob(job);
+                    System.out.println(tempAddress);
+                    FreeSpaceTable.printFST();
+                    if(tempAddress >= 0){
+                        Swapper(job, 0);
+                        longTermScheduler.remove(0);
+                        job = null;
+                    }else{
+                        working = false;
+                    }                    
+                }            
+        
         }
     }
     

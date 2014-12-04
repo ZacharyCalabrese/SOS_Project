@@ -26,6 +26,7 @@ public class processControlBlock{
         latched = false;
         inCore = false;
         terminated = false;
+        address = -1;
     }
     
     public int getJobNumber(){
