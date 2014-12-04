@@ -93,17 +93,13 @@ public class os{
             System.out.println("Break4");
         }else if(a[0] == 7){
         System.out.println("breakhere");
-            if(lastRunningJobPCB.getIoCount() != 0){
-            
-            lastRunningJobPCB.blockJob();
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            readyQueue.remove(lastRunningJobPCB);
-            lastRunningJobPCB = null;            
-            
+            if(lastRunningJobPCB.getIoCount() != 0){        
+                lastRunningJobPCB.blockJob();
+                while(readyQueue.contains(lastRunningJobPCB))
+                    readyQueue.remove(lastRunningJobPCB);
+                lastRunningJobPCB = null;                    
             }else{
-                readyQueue.add(currentWorkingJobPCB);
+                readyQueue.add(lastRunningJobPCB);
             }
         }
         
@@ -159,14 +155,12 @@ public class os{
                 readyQueue.add(currentWorkingJobPCB);
             }
                 
-        }else{
-            ioQueue.add(currentWorkingJobPCB);
         }
         
         if(!ioQueue.isEmpty()){
             currentWorkingJobPCB = ioQueue.get(0);
             sos.siodisk(currentWorkingJobPCB.getJobNumber());
-            readyQueue.add(currentWorkingJobPCB);
+            //readyQueue.add(currentWorkingJobPCB);
         }
         
         cpuScheduler(a, p);   
@@ -221,7 +215,7 @@ public class os{
         while(possible){
             System.out.println(readyQueue.size());
             currentWorkingJobPCB = readyQueue.get(0);
-                        readyQueue.remove(0);
+            readyQueue.remove(0);
             if(currentWorkingJobPCB.getBlockedStatus() == false){
                 System.out.println("Job to rusadfsafn: " + currentWorkingJobPCB.getJobNumber());
                 dispatcher(a, p);
