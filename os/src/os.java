@@ -10,7 +10,9 @@ public class os{
     private static List<processControlBlock> longTermScheduler = new ArrayList<processControlBlock>();
     private static processControlBlock lastRunningJobPCB;
     private static processControlBlock currentWorkingJobPCB;
+    private static processControlBlock lastJobToIo;
     private static int roundRobinSlice;
+    private static boolean currentlyDoingIo;
     
     /*
         INITIALIZE VARIABLES, TABLES, AND ROUND ROBIN SLICE
@@ -21,6 +23,8 @@ public class os{
         
         lastRunningJobPCB = null;
         currentWorkingJobPCB = null;
+        lastJobToIo = null;
+        currentlyDoingIo = false;
         
         roundRobinSlice = 500;
         
@@ -72,6 +76,16 @@ public class os{
     public static void Svc(int a[], int p[]){
         lastRunningJobPCB.calculateTimeProcessed(p[5]);
         
+        
+        /* When a job requests to be terminated
+          * - Remove from ready queue completely
+          * - Remove from io queue completely
+          * - set in core bit to false
+          * - Add space from exiting job to free space table
+          * - remove the job from the job table
+          * - set the current working job = null
+          * - set the last working job = null
+        */
         if(a[0] == 5){
             while(readyQueue.contains(lastRunningJobPCB))
                 readyQueue.remove(lastRunningJobPCB);
@@ -83,11 +97,17 @@ public class os{
             JobTable.removeJob(lastRunningJobPCB);
             currentWorkingJobPCB = null;
             lastRunningJobPCB = null;            
-        }else if(a[0] == 6){
+        }
+        /* When a job requests to do IO
+          * - Increment the io count
+          * - Add the job to the io queue
+          * - Call IO manager
+        */
+        else if(a[0] == 6){
             System.out.println(lastRunningJobPCB.getJobNumber());
             lastRunningJobPCB.incrementIoCount();
             System.out.println("Break2");
-            ioQueue.add(currentWorkingJobPCB);
+            ioQueue.add(lastRunningJobPCB);
             System.out.println("Break3");
             ioManager();
             System.out.println("Break4");
@@ -135,37 +155,51 @@ public class os{
     }
     
     public static void Dskint(int a[], int p[]){
+        currentlyDoingIo = false;
+        
+        for (processControlBlock t : ioQueue)
+            System.out.println("proces number: " + t.getJobNumber() + ", IOLeft: " + t.getIoCount());
+            
+            
+    
         if(lastRunningJobPCB != null){
             lastRunningJobPCB.calculateTimeProcessed(p[5]);
             if(!lastRunningJobPCB.getBlockedStatus())
                 readyQueue.add(lastRunningJobPCB);
         }
         
-        currentWorkingJobPCB = ioQueue.get(0);
-        ioQueue.remove(0);
+        System.out.println("ReadyQueue");
+        for (processControlBlock t : readyQueue)
+            System.out.println("proces number: " + t.getJobNumber() + ", IOLeft: " + t.getIoCount());        
+        
+        currentWorkingJobPCB = lastJobToIo;
+        //ioQueue.remove(0);
         
         currentWorkingJobPCB.decrementIoCount();
         currentWorkingJobPCB.unlatchJob();
         
         if(currentWorkingJobPCB.getIoCount() == 0){
+            while(ioQueue.contains(currentWorkingJobPCB))
+                ioQueue.remove(currentWorkingJobPCB);
             if(currentWorkingJobPCB.getBlockedStatus()){
                 currentWorkingJobPCB.unblockJob();
                 readyQueue.add(currentWorkingJobPCB);
             }else{
                 readyQueue.add(currentWorkingJobPCB);
-            }
-                
+            } 
         }
         
         if(!ioQueue.isEmpty()){
-            currentWorkingJobPCB = ioQueue.get(0);
-            sos.siodisk(currentWorkingJobPCB.getJobNumber());
+//        readyQueue.add(currentWorkingJobPCB);
+            ioManager();
+            //currentWorkingJobPCB = ioQueue.get(0);
+            //sos.siodisk(currentWorkingJobPCB.getJobNumber());
             //readyQueue.add(currentWorkingJobPCB);
         }
         
         cpuScheduler(a, p);   
         
-                    JobTable.printJobTable(); 
+        JobTable.printJobTable(); 
     }
     
     public static void Drmint(int a[], int p[]){
@@ -194,14 +228,29 @@ public class os{
         JobTable.printJobTable();
     }
     
+    
+    /*
+        Call this when we want to do IO
+        * - Get the job at the top of the IO Queue
+        * - If we are currently doing IO, just add to ready queue  
+    */
     public static void ioManager(){
         currentWorkingJobPCB = ioQueue.get(0);
-        currentWorkingJobPCB.latchJob();
-        if(ioQueue.size() == 1){
-            sos.siodisk(currentWorkingJobPCB.getJobNumber());  
+        readyQueue.add(lastRunningJobPCB);
+        if(!currentlyDoingIo){
+            currentlyDoingIo = true;
+            currentWorkingJobPCB.latchJob();
+            lastJobToIo = ioQueue.get(0);
+            ioQueue.remove(0);
+            sos.siodisk(currentWorkingJobPCB.getJobNumber()); 
+            if(!currentWorkingJobPCB.getBlockedStatus()){
+                readyQueue.add(currentWorkingJobPCB);
+            }
+            else
+                readyQueue.add(lastRunningJobPCB);
         }
         System.out.println(currentWorkingJobPCB.getJobNumber());
-        readyQueue.add(currentWorkingJobPCB);
+        
     }
     
     public static void cpuScheduler(int a[], int p[]){
@@ -214,22 +263,31 @@ public class os{
     
         while(possible){
             System.out.println(readyQueue.size());
+            if(readyQueue.size() == 0)
+            {
+                falseStuff = true;
+                break;
+            }
             currentWorkingJobPCB = readyQueue.get(0);
             readyQueue.remove(0);
-            if(currentWorkingJobPCB.getBlockedStatus() == false){
-                System.out.println("Job to rusadfsafn: " + currentWorkingJobPCB.getJobNumber());
-                dispatcher(a, p);
-                possible = false;
-            }else{
+            if(currentWorkingJobPCB != null){
+                if(currentWorkingJobPCB.getBlockedStatus() == false ){
+                    System.out.println("Job to rusadfsafn: " + currentWorkingJobPCB.getJobNumber());
+                    dispatcher(a, p);
+                    possible = false;
+                }else{
+                //possible = false;
+                falseStuff = true;
                 if(readyQueue.isEmpty()){
                     possible = false;
                 }
                 if(possible)
                     readyQueue.remove(0);
-                System.out.println(currentWorkingJobPCB.getJobNumber());
+                //System.out.println(currentWorkingJobPCB.getJobNumber());
                 a[0] = 1;
                 currentWorkingJobPCB = null;
                 lastRunningJobPCB = null;
+            }
             }
         }
         if(falseStuff == true){
@@ -275,6 +333,7 @@ public class os{
                 Swapper(job, 0);
                 
                 while(working){
+                    tempAddress = -1;
                     job = longTermScheduler.get(0);
                     tempAddress = FreeSpaceTable.findSpaceForJob(job);
                     System.out.println(tempAddress);
