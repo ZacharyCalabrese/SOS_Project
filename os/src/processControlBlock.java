@@ -106,7 +106,7 @@ public class processControlBlock{
     }
     
     public boolean getInCoreStatus(){
-        return inCore;
+        return inCore==true;
     }
     
     public void terminateJob(){
