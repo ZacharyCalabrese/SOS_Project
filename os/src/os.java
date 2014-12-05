@@ -263,9 +263,14 @@ public class os{
             readyQueue.add(lastRunningJobPCB);
         }
     
+        /* Set the currently working job equal to the first job off the job queue and remove it from the queue
+        */
         currentWorkingJobPCB = drumQueue.get(0);
         drumQueue.remove(0);
         
+        /* If the job was not "incore", put it in core and on the ready queue
+         * If the job was "incore" then the interrupt is because we want to move it out of core so set the incore bit to false
+        */
         if(!currentWorkingJobPCB.getInCoreStatus()){
             currentWorkingJobPCB.putInCore();
             readyQueue.add(currentWorkingJobPCB);
@@ -273,13 +278,20 @@ public class os{
             currentWorkingJobPCB.removeInCore();
         }
         
+        /* If drum queue has content on it
+          * - Set the currently working job to the first job off the drum queue
+          * - If the job is "incore", move from drum to memory
+          * - Else move from memory to drum
+        */
         if(!drumQueue.isEmpty()){
             currentWorkingJobPCB = drumQueue.get(0);
-            sos.siodrum(currentWorkingJobPCB.getJobNumber(), currentWorkingJobPCB.getJobSize(), currentWorkingJobPCB.getAddress(), 0);
+            if(!currentWorkingJobPCB.getInCoreStatus())
+                sos.siodrum(currentWorkingJobPCB.getJobNumber(), currentWorkingJobPCB.getJobSize(), currentWorkingJobPCB.getAddress(), 0);
+            else
+                sos.siodrum(currentWorkingJobPCB.getJobNumber(), currentWorkingJobPCB.getJobSize(), currentWorkingJobPCB.getAddress(), 1);
         }
         
         cpuScheduler(a, p);        
-        JobTable.printJobTable();
     }
     
     
