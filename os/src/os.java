@@ -127,7 +127,7 @@ public class os{
             if(lastRunningJobPCB.getIoCount() != 0){        
                 lastRunningJobPCB.blockJob();
                 blockCount++;
-                if(blockCount > 5 && !lastRunningJobPCB.getLatchedStatus() && lastRunningJobPCB.getCpuTimeLeft() > 6000 && lastRunningJobPCB.getCpuTimeUsed() < 1000){
+                if(blockCount > 5 && !lastRunningJobPCB.getLatchedStatus() && lastRunningJobPCB.getCpuTimeLeft() > 2000 && lastRunningJobPCB.getCpuTimeUsed() < 80 ){
                     drumQueue.add(lastRunningJobPCB); 
                 while(ioQueue.contains(lastRunningJobPCB))
                     ioQueue.remove(lastRunningJobPCB);                     
