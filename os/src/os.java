@@ -33,7 +33,7 @@ public class os{
         currentlyDoingIo = false;
         DoingSwap = false;
         
-        roundRobinSlice = 9;
+        roundRobinSlice = 2;
         blockCount = 0;
         
         sos.offtrace();
@@ -50,7 +50,6 @@ public class os{
         MemoryManager(currentlyWorkingJob, 0);
         
         // Only one chance a job goes on the ready queue from this function
-        
         cpuScheduler(a, p);
     }
     
@@ -62,10 +61,6 @@ public class os{
             if(lastRunningJobPCB.getIoCount() > 0){
                 while(readyQueue.contains(lastRunningJobPCB))
                     readyQueue.remove(lastRunningJobPCB);
-                while(drumToMainQueue.contains(lastRunningJobPCB))
-                    drumToMainQueue.remove(lastRunningJobPCB);
-                while(mainToDrumQueue.contains(lastRunningJobPCB))
-                    mainToDrumQueue.remove(lastRunningJobPCB);                    
             
                 lastRunningJobPCB.terminateJob();
             }else{
@@ -98,7 +93,7 @@ public class os{
                 lastRunningJobPCB.blockJob();
                 blockCount++;       
                 
-                if(blockCount > 1 && lastRunningJobPCB.getCpuTimeLeft() > 0){// || lastRunningJobPCB.getJobSize() > 40 || lastRunningJobPCB.getCpuTimeLeft() > 30000){
+                if(blockCount > 1 && lastRunningJobPCB.getCpuTimeLeft() > 2010){// || lastRunningJobPCB.getJobSize() > 40 || lastRunningJobPCB.getCpuTimeLeft() > 30000){
                     //if(ioQueue.size() > 1){
                         if(/*lastRunningJobPCB != ioQueue.get(0) &&*/ !lastRunningJobPCB.getLatchedStatus()){
                             mainToDrumQueue.add(lastRunningJobPCB);
@@ -144,8 +139,7 @@ public class os{
             }
         }
         
-        ioManager(); 
-          
+        ioManager();   
         cpuScheduler(a, p);
     }        
     
@@ -251,7 +245,6 @@ public class os{
             drumToMainQueue.add(job);
         }
         
-
         Swapper();
     }        
 
@@ -281,16 +274,16 @@ public class os{
             for(int i = 0; i < mainToDrumQueue.size(); i++){
                 if(lowest == 0 && !mainToDrumQueue.get(i).getLatchedStatus()){
                     currentlyWorkingJob = mainToDrumQueue.get(i);
-                    lowest = currentlyWorkingJob.getCpuTimeLeft();
+                    lowest = currentlyWorkingJob.getJobSize();
                     lowestIndex = i;
                 }
                 
                 currentlyWorkingJob = mainToDrumQueue.get(i);
                 
                 if(currentlyWorkingJob != null && !mainToDrumQueue.get(i).getLatchedStatus()){               
-                    if(currentlyWorkingJob.getCpuTimeLeft() > lowest){
+                    if(currentlyWorkingJob.getJobSize() > lowest){
                         lowestIndex = i;
-                        lowest = currentlyWorkingJob.getCpuTimeLeft();
+                        lowest = currentlyWorkingJob.getJobSize();
                     }
                 }
             }
@@ -337,7 +330,7 @@ public class os{
         for(int i = 0; i < readyQueue.size(); i++){
             if(lowest == 0 && !readyQueue.get(i).getBlockedStatus()){
                 currentlyWorkingJob = readyQueue.get(i);
-                lowest = currentlyWorkingJob.getJobSize();
+                lowest = currentlyWorkingJob.getCpuTimeLeft();
                 lowestIndex = i;
             }
             
@@ -346,9 +339,9 @@ public class os{
             if(currentlyWorkingJob != null){
                 if(currentlyWorkingJob.getBlockedStatus() == false ){                
                     if(currentlyWorkingJob.getTerminatedStatus() == false){
-                        if(currentlyWorkingJob.getJobSize() < lowest){
+                        if(currentlyWorkingJob.getCpuTimeLeft() < lowest){
                             lowestIndex = i;
-                            lowest = currentlyWorkingJob.getJobSize();
+                            lowest = currentlyWorkingJob.getCpuTimeLeft();
                         }
                     }
                 }
