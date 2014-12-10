@@ -69,6 +69,7 @@ public class os{
             
                 lastRunningJobPCB.terminateJob();
             }else{
+                
                 while(readyQueue.contains(lastRunningJobPCB))
                     readyQueue.remove(lastRunningJobPCB);
                 while(ioQueue.contains(lastRunningJobPCB))
@@ -213,7 +214,11 @@ public class os{
                 JobTable.removeJob(lastRunningJobPCB);
                 
                 lastRunningJobPCB = null;                           
-            }        
+                
+            } 
+            
+            Swapper();            
+            ioManager();        
         }
         /* If the job exceeds its time slice, place back on the ready drive
         */
@@ -221,7 +226,8 @@ public class os{
             readyQueue.add(currentlyWorkingJob);
         }
 
-        Swapper();
+
+
         cpuScheduler(a, p);
     }    
     
