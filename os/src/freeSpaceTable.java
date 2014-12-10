@@ -20,7 +20,7 @@ public class freeSpaceTable{
     
     public int findSpaceForJob(processControlBlock job){
         int tempAddress;
-        if(job.getJobSize() < worstSpaceSize){
+        if(job.getJobSize() <= worstSpaceSize){
             for(int i = worstSpaceAddress; i < worstSpaceAddress + job.getJobSize(); i++)
                 FreeSpaceTable[i] = 1;
             
@@ -39,6 +39,8 @@ public class freeSpaceTable{
     public void addSpace(processControlBlock job){
         for(int i = job.getAddress(); i < job.getAddress() + job.getJobSize() ; i++)
             FreeSpaceTable[i] = 0;
+            
+        job.setAddress(-1);    
             
         calculateWorstSpaceAddressAndSize();
     }

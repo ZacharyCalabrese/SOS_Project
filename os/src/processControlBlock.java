@@ -117,6 +117,10 @@ public class processControlBlock{
         return terminated;
     }
     
+    public int getPriority(){
+        return priority;
+    }
+    
     
     public void calculateTimeProcessed(int currentTime){
         cpuTimeUsed = cpuTimeUsed + currentTime - lastTimeProcessing;
