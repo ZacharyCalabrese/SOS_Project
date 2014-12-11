@@ -9,6 +9,7 @@ public class processControlBlock{
     private int ioPending;
     private int priority;
     private int address;
+    private int timesBlocked;
     private boolean blocked;
     private boolean latched;
     private boolean inCore;
@@ -26,7 +27,21 @@ public class processControlBlock{
         latched = false;
         inCore = false;
         terminated = false;
+        timesBlocked = 0;
         address = -1;
+    }
+    
+    public void incTimesBlocked(){
+        timesBlocked++;
+    }
+    
+    
+    public int getTimesBlocked(){
+        return timesBlocked;
+    }    
+    
+    public int getTimeArrived(){
+        return timeArrived;
     }
     
     public int getJobNumber(){
@@ -127,7 +142,7 @@ public class processControlBlock{
     }
     
     public void printProcess(){
-        System.out.println(jobNumber + "      " + jobSize + "      " + timeArrived + "      " + cpuTimeUsed + "      " + maxCpuTime + "      " + ioPending + "      " + priority + "      " + blocked  + "      " + latched + "      " + inCore + "      " + terminated + "      " + address);    
+        System.out.println(jobNumber + "      " + jobSize + "      " + timeArrived + "      " + cpuTimeUsed + "      " + maxCpuTime + "      " + ioPending + "      " + priority + "      " + blocked  + "      " + latched + "      " + inCore + "      " + terminated + "      " + address + "      " + timesBlocked);    
     }
 
 }
