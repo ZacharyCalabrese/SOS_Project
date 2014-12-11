@@ -155,11 +155,11 @@ public class os{
 
         if(lastRunningJobPCB.getCpuTimeUsed() >= lastRunningJobPCB.getMaxCpuTime()){
             if(lastRunningJobPCB.getIoCount() > 0){
-                readyQueue.remove(lastRunningJobPCB);
+                
             
                 lastRunningJobPCB.terminateJob();
             }else{
-                readyQueue.remove(lastRunningJobPCB);
+                
                 ioQueue.remove(lastRunningJobPCB);  
                 drumToMainQueue.remove(lastRunningJobPCB);       
                 mainToDrumQueue.remove(lastRunningJobPCB);                                        
