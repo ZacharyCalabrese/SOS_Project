@@ -132,17 +132,13 @@ public class os{
         
         if(!currentlyWorkingJob.getInCoreStatus()){
             currentlyWorkingJob.putInCore();
-            if(currentlyWorkingJob.getIoCount() > 0)
-                if(!currentlyWorkingJob.getBlockedStatus())
-                    ioQueue.add(0, currentlyWorkingJob);
-                else
-                    ioQueue.add(currentlyWorkingJob);
-                                        
-            readyQueue.add(currentlyWorkingJob);
+            readyQueue.add(currentlyWorkingJob);            
+            for(int i = 0; i < currentlyWorkingJob.getIoCount(); i++)
+                ioQueue.add(currentlyWorkingJob);
         }else{
             currentlyWorkingJob.removeInCore();
+            FreeSpaceTable.addSpace(currentlyWorkingJob);            
             drumToMainQueue.add(currentlyWorkingJob);
-            FreeSpaceTable.addSpace(currentlyWorkingJob);
             mainToDrumQueue.remove(currentlyWorkingJob);                            
         }
         
@@ -155,19 +151,10 @@ public class os{
 
         if(lastRunningJobPCB.getCpuTimeUsed() >= lastRunningJobPCB.getMaxCpuTime()){
             if(lastRunningJobPCB.getIoCount() > 0){
-                
-            
                 lastRunningJobPCB.terminateJob();
-            }else{
-                
-                ioQueue.remove(lastRunningJobPCB);  
-                drumToMainQueue.remove(lastRunningJobPCB);       
-                mainToDrumQueue.remove(lastRunningJobPCB);                                        
-                                                                                                                                                                  
+            }else{                                                                                                                                                
                 FreeSpaceTable.addSpace(lastRunningJobPCB);
                 JobTable.removeJob(lastRunningJobPCB);
-                
-                lastRunningJobPCB = null;                           
             } 
             
             Swapper();            
